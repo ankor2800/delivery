@@ -1,6 +1,8 @@
 <?php
 namespace Core\Order;
 
+use \Core\Location\Location as Location;
+
 class Order
 {
     const COUNT = 5;
@@ -32,8 +34,7 @@ class Order
      */
     public function getOrders()
     {
-        if (!$this->order)
-        {
+        if (!$this->order) {
             $this->generate();
         }
 
@@ -53,9 +54,16 @@ class Order
 
             $cooking = $this->generateCooking(self::COOKING);
 
+            $location = Location::generateLocation();
+
             $this->order[] = (object)[
                 'coming' => $coming,
                 'cooking' => $cooking,
+                'location' => $location,
+                'route' =>  Location::getRoute(
+                    Location::generateLocation(0,0),
+                    $location
+                ),
                 'finish' => $coming + $cooking,
             ];
         }
