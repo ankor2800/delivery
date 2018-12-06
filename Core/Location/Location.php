@@ -5,6 +5,7 @@ class Location
 {
     const MIN = -1000;
     const MAX = 1000;
+    const CLUSTER = 300;
 
     /**
      * Generate location object coordinates
@@ -30,6 +31,25 @@ class Location
     {
         return abs(self::getAxisX($firstPoint) - self::getAxisX($secondPoint))
             + abs(self::getAxisY($firstPoint) - self::getAxisY($secondPoint));
+    }
+
+    /**
+     * Get nearby orders by location
+     * @param object $location location
+     * @param array $orders requested orders
+     * @return mixed $arNear
+     */
+    public static function getNearPoint($location, $orders)
+    {
+        foreach ($orders as $key => $order) {
+            $route = self::getRoute($location, $order->location);
+
+            if ($route <= self::CLUSTER) {
+                $arNear[$key] = $order;
+            }
+        }
+
+        return $arNear;
     }
 
     /**

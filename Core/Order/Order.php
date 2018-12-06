@@ -38,7 +38,9 @@ class Order
             $this->generate();
         }
 
-        return $this->sortOrders();
+        $this->sortOrders();
+
+        return $this->clusters();
     }
 
     /**
@@ -101,6 +103,34 @@ class Order
         {
             return $a->finish - $b->finish;
         });
+
+        return $this->order;
+    }
+
+    /**
+     * Grouping orders by location
+     * @return array
+     */
+    protected function clusters()
+    {
+        $temp = $this->order;
+
+        foreach ($this->order as $key => &$order) {
+            unset($temp[$key]);
+
+            $nearOrder = Location::getNearPoint(
+                $order->location,
+                $temp
+            );
+
+            if (count($nearOrder) > 0) {
+                foreach (array_keys($nearOrder) as $key) {
+                    unset($this->order[$key]);
+                }
+
+                $order->children = $nearOrder;
+            }
+        }
 
         return $this->order;
     }
