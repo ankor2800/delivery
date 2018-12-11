@@ -16,6 +16,8 @@ class Order
     ];
 
     protected $order;
+    protected $slice;
+    protected $clone;
 
     /**
      * Order constructor.
@@ -35,17 +37,51 @@ class Order
     public function getOrders()
     {
         if (!$this->order) {
-            $this->generate();
+            $this->generate()->sortOrders();
         }
 
-        $this->sortOrders();
+        return $this->order;
+    }
 
-        return $this->clusters();
+    /**
+     * Get clone
+     * @return array
+     */
+    public function getClone()
+    {
+        if (!$this->clone) {
+            $this->setClone()->clusters();
+        }
+
+        return $this->clone;
+    }
+
+    /**
+     * Get slice array orders
+     * @return array
+     */
+    public function getSlice()
+    {
+        if ($this->slice) {
+            return $this->slice;
+        }
+    }
+
+    /**
+     * Set slice, array slice from clone array
+     * @param int $limit slice limit
+     * @return $this
+     */
+    public function setSlice($limit)
+    {
+        $this->slice = array_slice($this->clone, 0 , $limit, true);
+
+        return $this;
     }
 
     /**
      * Generate orders
-     * @return array
+     * @return $this
      */
     protected function generate()
     {
@@ -70,7 +106,7 @@ class Order
             ];
         }
 
-        return $this->order;
+        return $this;
     }
 
     /**
@@ -95,7 +131,7 @@ class Order
 
     /**
      * Sort orders by end cooking time
-     * @return array
+     * @return $this
      */
     protected function sortOrders()
     {
@@ -104,18 +140,33 @@ class Order
             return $a->finish - $b->finish;
         });
 
-        return $this->order;
+        return $this;
+    }
+
+    /**
+     * Set clone, clone order objects
+     * @return $this
+     */
+    protected function setClone()
+    {
+        foreach ($this->order as $order) {
+            $clone[] = clone $order;
+        }
+
+        $this->clone = $clone;
+
+        return $this;
     }
 
     /**
      * Grouping orders by location
-     * @return array
+     * @return $this
      */
     protected function clusters()
     {
-        $temp = $this->order;
+        $temp = $this->clone;
 
-        foreach ($this->order as $key => &$order) {
+        foreach ($this->clone as $key => &$order) {
             unset($temp[$key]);
 
             $nearOrder = Location::getNearPoint(
@@ -124,14 +175,13 @@ class Order
             );
 
             if (count($nearOrder) > 0) {
-                foreach (array_keys($nearOrder) as $key) {
-                    unset($this->order[$key]);
+                foreach ($nearOrder as $key => $near) {
+                    $order->children[$key] = $near;
+                    unset($this->clone[$key]);
                 }
-
-                $order->children = $nearOrder;
             }
         }
 
-        return $this->order;
+        return $this;
     }
 }
