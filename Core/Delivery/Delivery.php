@@ -5,6 +5,7 @@ class Delivery
 {
     const LIMIT = 60;
     const SPEED = 60;
+    const LIMIT_COUNT = 3;
 
     /**
      * Get max wait time for order

@@ -141,7 +141,9 @@ class Order
      */
     protected function setDelivery($order, $key)
     {
-        $this->delivery[$key] = $order;
+        if (count($this->delivery) < Delivery::LIMIT_COUNT) {
+            $this->delivery[$key] = $order;
+        }
 
         return $this;
     }
