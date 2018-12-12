@@ -2,6 +2,7 @@
 namespace Core\Order;
 
 use \Core\Location\Location as Location;
+use \Core\Delivery\Delivery as Delivery;
 
 class Order
 {
@@ -18,6 +19,7 @@ class Order
     protected $order;
     protected $slice;
     protected $clone;
+    protected $delivery;
 
     /**
      * Order constructor.
@@ -27,7 +29,8 @@ class Order
         array $order = []
     )
     {
-        $this->order = $order;
+        $order = $this->generate()->sortOrders();
+        $this->order = $order->getOrders();
     }
 
     /**
@@ -36,10 +39,6 @@ class Order
      */
     public function getOrders()
     {
-        if (!$this->order) {
-            $this->generate()->sortOrders();
-        }
-
         return $this->order;
     }
 
@@ -49,9 +48,7 @@ class Order
      */
     public function getClone()
     {
-        if (!$this->clone) {
-            $this->setClone()->clusters();
-        }
+        $this->setClone()->clusters();
 
         return $this->clone;
     }
@@ -62,9 +59,7 @@ class Order
      */
     public function getSlice()
     {
-        if ($this->slice) {
-            return $this->slice;
-        }
+        return $this->slice;
     }
 
     /**
@@ -75,6 +70,78 @@ class Order
     public function setSlice($limit)
     {
         $this->slice = array_slice($this->clone, 0 , $limit, true);
+
+        return $this;
+    }
+
+    /**
+     * Calculate delivery orders
+     * @param array $orders orders objects array
+     * @return $this
+     */
+    public function delivery($orders)
+    {
+        self::sortDelivery($orders);
+
+        $location = Location::generateLocation(0,0);
+
+        $time = Delivery::getMaxTime($orders);
+
+        foreach ($orders as $key => $order) {
+            if (Delivery::isValidDelivery($time, $location, $order)) {
+                $this->setDelivery($order, $key);
+
+                if (count($order->children)) {
+                    foreach ($order->children as $childKey => $child) {
+                        if (Delivery::isValidDelivery($time, $location, $child))
+                        {
+                            $this->setDelivery($child, $childKey);
+                        }
+                    }
+                }
+            }
+
+            $location = $order->location;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Reset delivery object and delete orders from general object
+     * @return $this
+     */
+    public function resetDelivery()
+    {
+        if ($this->delivery) {
+            foreach (array_keys($this->delivery) as $key) {
+                unset($this->order[$key]);
+            }
+
+            $this->delivery = [];
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get valid delivery orders
+     * @return array
+     */
+    public function getDelivery()
+    {
+        return $this->delivery;
+    }
+
+    /**
+     * Add order in array valid delivery
+     * @param object $order object order
+     * @param int $key order key in general object
+     * @return $this
+     */
+    protected function setDelivery($order, $key)
+    {
+        $this->delivery[$key] = $order;
 
         return $this;
     }
@@ -144,13 +211,25 @@ class Order
     }
 
     /**
+     * Sort orders by distance and save index association
+     * @param $orders
+     */
+    protected function sortDelivery(&$orders)
+    {
+        uasort($orders, function($a,$b)
+        {
+            return $a->route - $b->route;
+        });
+    }
+
+    /**
      * Set clone, clone order objects
      * @return $this
      */
     protected function setClone()
     {
-        foreach ($this->order as $order) {
-            $clone[] = clone $order;
+        foreach ($this->order as $key => $order) {
+            $clone[$key] = clone $order;
         }
 
         $this->clone = $clone;
