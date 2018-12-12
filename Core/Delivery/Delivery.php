@@ -69,7 +69,7 @@ class Delivery
      */
     public static function getDeliveryTime($route)
     {
-        return $route / self::SPEED;
+        return round($route / self::SPEED, 2);
     }
 
     /**
@@ -81,13 +81,13 @@ class Delivery
      */
     public static function isValidDelivery($time, $location, $order)
     {
-        $deliveryTime = Delivery::getDeliveryTime(
+        $order->deliveryTime = Delivery::getDeliveryTime(
             \Core\Location\Location::getRoute(
                 $location,
                 $order->location
             )
         );
 
-        return ($time - $order->coming + $deliveryTime < self::LIMIT);
+        return ($time - $order->coming + $order->deliveryTime < self::LIMIT);
     }
 }

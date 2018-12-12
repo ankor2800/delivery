@@ -134,6 +134,31 @@ class Order
     }
 
     /**
+     * Output generated orders
+     */
+    public function orderOutput()
+    {
+        $orders = $this->getOrders();
+
+        foreach ($orders as $id => $order) {
+            echo $id.' '.$order->coming.' '.$order->cooking.' '
+                .Location::getAxisX($order->location).' '
+                .Location::getAxisY($order->location)."\n";
+        }
+    }
+
+    /**
+     * Output calculated routes
+     */
+    public function deliveryOutput()
+    {
+        echo "Route:\n";
+        foreach ($this->getDelivery() as $id => $order) {
+            echo $id.' '.$order->deliveryTime."\n";
+        }
+    }
+
+    /**
      * Add order in array valid delivery
      * @param object $order object order
      * @param int $key order key in general object
