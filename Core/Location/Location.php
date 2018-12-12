@@ -37,10 +37,12 @@ class Location
      * Get nearby orders by location
      * @param object $location location
      * @param array $orders requested orders
-     * @return mixed $arNear
+     * @return array $arNear
      */
     public static function getNearPoint($location, $orders)
     {
+        $arNear = [];
+
         foreach ($orders as $key => $order) {
             $route = self::getRoute($location, $order->location);
 
@@ -57,7 +59,7 @@ class Location
      * @param object $location location coordinates
      * @return int
      */
-    protected static function getAxisX($location)
+    public static function getAxisX($location)
     {
         return $location->axisX;
     }
@@ -67,7 +69,7 @@ class Location
      * @param object $location location coordinates
      * @return int
      */
-    protected static function getAxisY($location)
+    public static function getAxisY($location)
     {
         return $location->axisY;
     }

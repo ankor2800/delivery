@@ -29,7 +29,7 @@ class Order
         array $order = []
     )
     {
-        $order = $this->generate()->sortOrders();
+        $order = $this->generate();
         $this->order = $order->getOrders();
     }
 
@@ -91,7 +91,7 @@ class Order
             if (Delivery::isValidDelivery($time, $location, $order)) {
                 $this->setDelivery($order, $key);
 
-                if (count($order->children)) {
+                if (!empty($order->children)) {
                     foreach ($order->children as $childKey => $child) {
                         if (Delivery::isValidDelivery($time, $location, $child))
                         {
@@ -157,7 +157,11 @@ class Order
         for ($count = 0; $count < self::COUNT; $count++) {
             $coming = $this->generateComing(
                 self::COMING
-            ) + $this->order[$count-1]->coming;
+            );
+
+            if (isset($this->order[$count-1]->coming)) {
+                $coming = $coming + $this->order[$count-1]->coming;
+            }
 
             $cooking = $this->generateCooking(self::COOKING);
 
@@ -202,9 +206,9 @@ class Order
      * Sort orders by end cooking time
      * @return $this
      */
-    protected function sortOrders()
+    public function sortOrders()
     {
-        usort($this->order, function($a,$b)
+        uasort($this->order, function($a,$b)
         {
             return $a->finish - $b->finish;
         });

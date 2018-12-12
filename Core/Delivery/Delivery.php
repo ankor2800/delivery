@@ -27,7 +27,7 @@ class Delivery
     {
         foreach ($orders as $key => &$order) {
             if ($order->finish < $waitTime) {
-                if (count($order->children) > 0) {
+                if (!empty($order->children) > 0) {
                     foreach ($order->children as $childKey => $child) {
                         if ($child->finish > $waitTime) {
                             unset($order->children[$childKey]);
@@ -50,7 +50,7 @@ class Delivery
     public static function getMaxTime($orders)
     {
         foreach ($orders as $order) {
-            if ($order->children) {
+            if (!empty($order->children)) {
                 foreach ($order->children as $child) {
                     $arTime[] = $child->finish;
                 }
