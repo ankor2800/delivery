@@ -192,6 +192,14 @@ class Order
 
             $location = Location::generateLocation();
 
+            if (isset($this->order[$count-2])) {
+                $minFinish = min(
+                    $this->order[$count-2]->finish,
+                    $this->order[$count-1]->finish
+                );
+                $coming = ($coming > $minFinish ? $coming : $minFinish);
+            }
+
             $this->order[] = (object)[
                 'coming' => $coming,
                 'cooking' => $cooking,
