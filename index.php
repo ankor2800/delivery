@@ -23,7 +23,7 @@ while (count($object->getOrders()) > 0) {
         Delivery::checkWait(
             Delivery::getWaitTime(current($slice)),
             $slice
-        )
+        )?:current($slice)
     );
 
     $result->deliveryOutput();

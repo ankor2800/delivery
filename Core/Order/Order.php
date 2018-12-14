@@ -6,7 +6,10 @@ use \Core\Delivery\Delivery as Delivery;
 
 class Order
 {
-    const COUNT = 5;
+    const COUNT = [
+        'min' => 10,
+        'max' => 100
+    ];
     const COMING = [
         'min' => 1,
         'max' => 30
@@ -20,6 +23,7 @@ class Order
     protected $slice;
     protected $clone;
     protected $delivery;
+    protected $wrongDelivery;
 
     /**
      * Order constructor.
@@ -90,18 +94,27 @@ class Order
         foreach ($orders as $key => $order) {
             if (Delivery::isValidDelivery($time, $location, $order)) {
                 $this->setDelivery($order, $key);
+                $location = $order->location;
 
                 if (!empty($order->children)) {
                     foreach ($order->children as $childKey => $child) {
                         if (Delivery::isValidDelivery($time, $location, $child))
                         {
                             $this->setDelivery($child, $childKey);
+                            $location = $child->location;
                         }
                     }
                 }
             }
+        }
 
-            $location = $order->location;
+        if (count($this->getDelivery()) == 0) {
+            $location = Location::generateLocation(0,0);
+            $order = reset($orders);
+
+            if (!Delivery::isValidDelivery($time, $location, $order)) {
+                $this->setWrongDelivery($order, key($orders));
+            }
         }
 
         return $this;
@@ -121,6 +134,14 @@ class Order
             $this->delivery = [];
         }
 
+        if ($this->wrongDelivery) {
+            foreach (array_keys($this->wrongDelivery) as $key) {
+                unset($this->order[$key]);
+            }
+
+            $this->wrongDelivery = [];
+        }
+
         return $this;
     }
 
@@ -131,6 +152,15 @@ class Order
     public function getDelivery()
     {
         return $this->delivery;
+    }
+
+    /**
+     * Get valid delivery orders
+     * @return array
+     */
+    public function getWrongDelivery()
+    {
+        return $this->wrongDelivery;
     }
 
     /**
@@ -152,9 +182,18 @@ class Order
      */
     public function deliveryOutput()
     {
-        echo "Route:\n";
-        foreach ($this->getDelivery() as $id => $order) {
-            echo $id.' '.$order->deliveryTime."\n";
+        if (count($this->getDelivery()) > 0) {
+            echo "Route:\n";
+            foreach ($this->getDelivery() as $id => $order) {
+                echo $id . ' ' . $order->deliveryTime . "\n";
+            }
+        }
+
+        if (count($this->getWrongDelivery()) > 0) {
+            echo "Route > 60m:\n";
+            foreach ($this->getWrongDelivery() as $id => $order) {
+                echo $id . ' ' . $order->deliveryTime . "\n";
+            }
         }
     }
 
@@ -174,13 +213,26 @@ class Order
     }
 
     /**
+     * Add order in array wrong delivery
+     * @param object $order object order
+     * @param int $key order key in general object
+     * @return $this
+     */
+    protected function setWrongDelivery($order, $key)
+    {
+        $this->wrongDelivery[$key] = $order;
+
+        return $this;
+    }
+
+    /**
      * Generate orders
      * @return $this
      */
     protected function generate()
     {
-        for ($count = 0; $count < self::COUNT; $count++) {
-            $coming = $this->generateComing(
+        for ($count = 0; $count < self::generateCount(self::COUNT); $count++) {
+            $coming = self::generateComing(
                 self::COMING
             );
 
@@ -188,31 +240,45 @@ class Order
                 $coming = $coming + $this->order[$count-1]->coming;
             }
 
-            $cooking = $this->generateCooking(self::COOKING);
+            $cooking = self::generateCooking(self::COOKING);
 
             $location = Location::generateLocation();
+
+            $start = $coming;
 
             if (isset($this->order[$count-2])) {
                 $minFinish = min(
                     $this->order[$count-2]->finish,
                     $this->order[$count-1]->finish
                 );
-                $coming = ($coming > $minFinish ? $coming : $minFinish);
+
+                $start = ($coming > $minFinish ? $coming : $minFinish);
             }
 
             $this->order[] = (object)[
                 'coming' => $coming,
+                'start' => $start,
                 'cooking' => $cooking,
                 'location' => $location,
                 'route' =>  Location::getRoute(
                     Location::generateLocation(0,0),
                     $location
                 ),
-                'finish' => $coming + $cooking,
+                'finish' => $start + $cooking,
             ];
         }
 
         return $this;
+    }
+
+    /**
+     * Generate count orders
+     * @param array $count range count
+     * @return int
+     */
+    protected function generateCount($count)
+    {
+        return rand($count['min'], $count['max']);
     }
 
     /**

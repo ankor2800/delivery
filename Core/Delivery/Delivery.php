@@ -26,7 +26,7 @@ class Delivery
     public static function checkWait($waitTime, $orders)
     {
         foreach ($orders as $key => &$order) {
-            if ($order->finish < $waitTime) {
+            if ($order->finish <= $waitTime) {
                 if (!empty($order->children) > 0) {
                     foreach ($order->children as $childKey => $child) {
                         if ($child->finish > $waitTime) {
@@ -49,6 +49,8 @@ class Delivery
      */
     public static function getMaxTime($orders)
     {
+        $arTime = [];
+
         foreach ($orders as $order) {
             if (!empty($order->children)) {
                 foreach ($order->children as $child) {
