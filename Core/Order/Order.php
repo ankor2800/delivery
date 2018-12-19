@@ -19,11 +19,11 @@ class Order
         'max' => 30
     ];
 
-    protected $order;
-    protected $slice;
-    protected $clone;
-    protected $delivery;
-    protected $wrongDelivery;
+    protected $order = [];
+    protected $slice = [];
+    protected $clone = [];
+    protected $delivery = [];
+    protected $wrongDelivery = [];
 
     /**
      * Order constructor.
@@ -205,7 +205,7 @@ class Order
      */
     protected function setDelivery($order, $key)
     {
-        if (count($this->delivery) < Delivery::LIMIT_COUNT) {
+        if (count($this->getDelivery()) < Delivery::LIMIT_COUNT) {
             $this->delivery[$key] = $order;
         }
 
